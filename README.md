@@ -16,6 +16,8 @@ that don't expand wildcards.
 | `xargs` | ✅ 0.1 |
 | `sort` | ✅ 0.1 |
 | `uniq` | ✅ 0.1 |
+| `cut` | ✅ 0.1 |
+| `tr` | ✅ 0.1 |
 
 ## Build
 
@@ -46,6 +48,7 @@ src/Head, src/Tail    head, tail
 src/Wc                wc
 src/Xargs             xargs
 src/Sort, src/Uniq    sort, uniq
+src/Cut, src/Tr       cut, tr
 tests/<Tool>.Tests    xUnit tests for each tool
 ```
 
@@ -278,3 +281,37 @@ uniq -d log.txt                      # only lines that repeat
   behaviour).
 - `--parallel`, `--batch-size`, `--compress-program` and `--random-source` are accepted and
   ignored.
+
+## cut and tr
+
+GNU `cut` and `tr`. For ASCII input their output matches GNU's byte for byte across a 62-case
+comparison, and on a 55 MB file.
+
+```powershell
+cut -d, -f1,3 data.csv                # columns 1 and 3 of a CSV
+cut -c1-80 log.txt                    # first 80 characters of each line
+tr -d '\r' < windows.txt > unix.txt   # CRLF to LF
+tr '[:lower:]' '[:upper:]' < in.txt   # upper-case, including é → É
+tr -s ' ' < spaced.txt                # squeeze runs of spaces
+tr -cs '[:alpha:]' '\n' < book.txt    # one word per line
+```
+
+`cut` supports `-b -c -f -d -s -z`, `--complement` and `--output-delimiter`. `tr` supports
+`-c -d -s -t`, ranges, the `[:class:]`, `[=c=]`, `[c*n]` and `[c*]` constructs, and the usual
+escapes.
+
+**Windows behaviour**
+
+- **Characters, not bytes:** GNU's cut and tr work on bytes, so on UTF-8 text `cut -c1-4` can
+  split a character and `tr` can't translate `é`. Here `cut -c` counts characters (`-b` still
+  counts raw bytes). `tr` works on Unicode characters: ranges go by code point, the classes
+  include non-ASCII letters, and `[:lower:]`→`[:upper:]` uses Unicode case mapping.
+- **Line endings:** `cut` keeps CRLF endings, and they don't count as part of the line. In
+  `tr`, `\r` is an ordinary character, so `tr -d '\r'` converts CRLF files to LF.
+- **Encodings:** UTF-16 input is decoded. Other encodings pass through unchanged.
+- **Speed:** `cut` is about 6× faster than GNU, and `tr` is about the same.
+
+**Differences from GNU**
+
+- For non-ASCII text, `cut -c` and `tr` count characters where GNU counts bytes.
+- `[=c=]` matches only `c` itself.
