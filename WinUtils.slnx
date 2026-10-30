@@ -4,7 +4,9 @@
     <Project Path="src/Grep/Grep.csproj" />
     <Project Path="src/Head/Head.csproj" />
     <Project Path="src/Sed/Sed.csproj" />
+    <Project Path="src/Sort/Sort.csproj" />
     <Project Path="src/Tail/Tail.csproj" />
+    <Project Path="src/Uniq/Uniq.csproj" />
     <Project Path="src/Wc/Wc.csproj" />
     <Project Path="src/WinUtils.Common/WinUtils.Common.csproj" />
     <Project Path="src/Xargs/Xargs.csproj" />
@@ -14,7 +16,9 @@
     <Project Path="tests/Grep.Tests/Grep.Tests.csproj" />
     <Project Path="tests/Head.Tests/Head.Tests.csproj" />
     <Project Path="tests/Sed.Tests/Sed.Tests.csproj" />
+    <Project Path="tests/Sort.Tests/Sort.Tests.csproj" />
     <Project Path="tests/Tail.Tests/Tail.Tests.csproj" />
+    <Project Path="tests/Uniq.Tests/Uniq.Tests.csproj" />
     <Project Path="tests/Wc.Tests/Wc.Tests.csproj" />
     <Project Path="tests/Xargs.Tests/Xargs.Tests.csproj" />
   </Folder>

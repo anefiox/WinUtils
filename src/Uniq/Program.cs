@@ -1,0 +1,14 @@
+﻿using WinUtils.Common.IO;
+using WinUtils.Uniq;
+
+using var stdout = OutputSink.OpenStdout();
+using var stderr = OutputSink.OpenStderr();
+try
+{
+    return UniqCommand.Run(args, StdStreams.OpenStdin(), stdout, stderr);
+}
+catch (OutputClosedException)
+{
+    // The reader went away; there's no one left to tell.
+    return 0;
+}
