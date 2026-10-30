@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>tail</AssemblyName>
+    <RootNamespace>WinUtils.Tail</RootNamespace>
+    <PublishAot>true</PublishAot>
+    <OptimizationPreference>Speed</OptimizationPreference>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WinUtils.Common\WinUtils.Common.csproj" />
+    <InternalsVisibleTo Include="Tail.Tests" />
+  </ItemGroup>
+
+</Project>

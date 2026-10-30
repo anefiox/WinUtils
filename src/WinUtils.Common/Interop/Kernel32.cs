@@ -4,6 +4,7 @@ namespace WinUtils.Common.Interop;
 
 internal static unsafe partial class Kernel32
 {
+    public const int STD_INPUT_HANDLE = -10;
     public const int STD_OUTPUT_HANDLE = -11;
     public const int STD_ERROR_HANDLE = -12;
     public const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004;

@@ -29,6 +29,9 @@ public abstract class OutputSink : IDisposable
     /// <summary>Writes text that came from an input file.</summary>
     public abstract void WriteContent(ReadOnlySpan<char> text);
 
+    /// <summary>Writes raw bytes. A console can only show text, so it decodes them as UTF-8.</summary>
+    public abstract void WriteBytes(ReadOnlySpan<byte> bytes);
+
     public abstract void Flush();
 
     /// <summary>Turns on ANSI escape-sequence processing; returns false if colors can't be shown.</summary>
@@ -69,6 +72,21 @@ public abstract class OutputSink : IDisposable
 
         public override void WriteContent(ReadOnlySpan<char> text) => Encode(text, ContentEncoding);
 
+        public override void WriteBytes(ReadOnlySpan<byte> bytes)
+        {
+            if (bytes.Length > _buffer.Length - _length)
+            {
+                Flush();
+                if (bytes.Length > _buffer.Length)
+                {
+                    WriteToStream(bytes);
+                    return;
+                }
+            }
+            bytes.CopyTo(_buffer.AsSpan(_length));
+            _length += bytes.Length;
+        }
+
         private void Encode(ReadOnlySpan<char> text, Encoding encoding)
         {
             int max = encoding.GetMaxByteCount(text.Length);
@@ -77,7 +95,7 @@ public abstract class OutputSink : IDisposable
                 Flush();
                 if (max > _buffer.Length)
                 {
-                    WriteBytes(encoding.GetBytes(text.ToArray()));
+                    WriteToStream(encoding.GetBytes(text.ToArray()));
                     return;
                 }
             }
@@ -87,12 +105,12 @@ public abstract class OutputSink : IDisposable
         public override void Flush()
         {
             if (_length == 0) return;
-            WriteBytes(_buffer.AsSpan(0, _length));
+            WriteToStream(_buffer.AsSpan(0, _length));
             _length = 0;
             if (!_closed) Guard(stream.Flush);
         }
 
-        private void WriteBytes(ReadOnlySpan<byte> bytes)
+        private void WriteToStream(ReadOnlySpan<byte> bytes)
         {
             if (_closed) return;
             try
@@ -139,6 +157,8 @@ public abstract class OutputSink : IDisposable
         }
 
         public override void WriteContent(ReadOnlySpan<char> text) => Write(text);
+
+        public override void WriteBytes(ReadOnlySpan<byte> bytes) => Write(Utf8.GetString(bytes));
 
         public override unsafe void Flush()
         {

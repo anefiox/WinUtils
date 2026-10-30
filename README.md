@@ -10,6 +10,8 @@ that don't expand wildcards.
 | `grep` | ✅ 0.1 |
 | `findw` (find) | ✅ 0.1 |
 | `sed` | ✅ 0.1 |
+| `head` | ✅ 0.1 |
+| `tail` | ✅ 0.1 |
 
 ## Build
 
@@ -29,11 +31,13 @@ one tool or all of them by putting the exes somewhere on your `PATH`.
 src/WinUtils.Common   shared by every tool
   CommandLine/          GNU getopt_long-style option parser
   IO/                   LineReader (encoding detection), OutputSink (Unicode console output),
-                        Wildcards (expands *.txt, since cmd/PowerShell don't), FileIdentity
-  Text/                 Glob (fnmatch), PosixRegex (POSIX BRE/ERE to .NET regex)
+                        Wildcards (expands *.txt, since cmd/PowerShell don't), FileIdentity,
+                        ByteLines/ByteTextWriter (byte-exact line handling), StdStreams
+  Text/                 Glob (fnmatch), PosixRegex (POSIX BRE/ERE to .NET regex), Sizes (10K, 5MiB)
 src/Grep              grep
 src/FindW             findw
 src/Sed               sed
+src/Head, src/Tail    head, tail
 tests/<Tool>.Tests    xUnit tests for each tool
 ```
 
@@ -138,3 +142,35 @@ every address form (`N`, `$`, `/re/I`, `\%re%`, `first~step`, `addr,+N`, `addr,~
 - The `e` command and the `s///e` flag (run the pattern space as a shell command) aren't
   supported.
 - `--posix`, `--debug`, `--sandbox` and `--follow-symlinks` are accepted and ignored.
+
+## head and tail
+
+GNU `head` and `tail`. Their output matches GNU's byte for byte across a 324-case comparison.
+
+```powershell
+head -n 20 file.txt          # first 20 lines
+head -n -5 file.txt          # all but the last 5 lines
+tail -n 50 app.log           # last 50 lines, read from the end of the file
+tail -n +2 data.csv          # everything after the header line
+tail -c 1M huge.bin          # last MiB
+tail -f app.log              # follow appended data
+tail -F app.log              # follow the name, surviving log rotation
+tail -f build.log --pid 1234 # stop following when process 1234 exits
+```
+
+**Windows behaviour**
+
+- **Speed:** `tail` reads files from the end, so `tail app.log` is instant even on a
+  multi-GB file. `tail < file` gets the same speed, because redirected stdin is seekable.
+- **Byte-exact output:** output keeps CRLF line endings and any encoding. UTF-16 files are
+  counted in whole characters and printed as UTF-8.
+- **Following:** `tail -f` opens files with full sharing, so it never blocks the program writing
+  the log or a tool rotating or deleting it. `-F` notices when the file is renamed, replaced,
+  truncated, deleted or recreated, and switches to the new file. Windows has no inotify, so
+  files are checked every 0.25 s; change this with `-s`.
+
+**Differences from GNU**
+
+- `tail` checks for new data every 0.25 s by default, rather than GNU's 1 s.
+- The obsolete `tail +N` form, a positional argument starting with `+`, isn't supported. Use
+  `tail -n +N`.
