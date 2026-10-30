@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Not "find": Windows already ships an unrelated find.exe in System32. -->
+    <AssemblyName>findw</AssemblyName>
+    <RootNamespace>WinUtils.FindW</RootNamespace>
+    <PublishAot>true</PublishAot>
+    <OptimizationPreference>Speed</OptimizationPreference>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WinUtils.Common\WinUtils.Common.csproj" />
+    <InternalsVisibleTo Include="FindW.Tests" />
+  </ItemGroup>
+
+</Project>

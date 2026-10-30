@@ -1,3 +1,4 @@
+using WinUtils.Common.Text;
 using System.Text.RegularExpressions;
 
 namespace WinUtils.Grep;

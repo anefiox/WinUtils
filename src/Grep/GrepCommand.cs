@@ -1,3 +1,4 @@
+using WinUtils.Common.Text;
 using System.Security;
 using WinUtils.Common.IO;
 

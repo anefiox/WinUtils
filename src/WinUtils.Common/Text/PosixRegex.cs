@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace WinUtils.Grep;
+namespace WinUtils.Common.Text;
 
 public sealed class PatternException(string message) : Exception(message);
 
@@ -14,7 +14,7 @@ public sealed class PatternException(string message) : Exception(message);
 /// is literal, and '^'/'$' in a BRE are anchors only at the edges of an expression.
 /// </para>
 /// </summary>
-internal static class PosixRegex
+public static class PosixRegex
 {
     /// <summary>Matches where a line starts, inside a buffer that holds many lines.</summary>
     public const string LineStart = @"(?<![^\n])";

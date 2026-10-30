@@ -8,6 +8,7 @@ that don't expand wildcards.
 | Tool | Status |
 |------|--------|
 | `grep` | ✅ 0.1 |
+| `findw` (find) | ✅ 0.1 |
 
 ## Build
 
@@ -28,9 +29,10 @@ src/WinUtils.Common   shared by every tool
   CommandLine/          GNU getopt_long-style option parser
   IO/                   LineReader (encoding detection), OutputSink (Unicode console output),
                         Wildcards (expands *.txt, since cmd/PowerShell don't), FileIdentity
-  Text/                 Glob (fnmatch)
+  Text/                 Glob (fnmatch), PosixRegex (POSIX BRE/ERE to .NET regex)
 src/Grep              grep
-tests/Grep.Tests      xUnit tests
+src/FindW             findw
+tests/<Tool>.Tests    xUnit tests for each tool
 ```
 
 To add a tool: create `src/<Tool>` with `<AssemblyName>tool</AssemblyName>` and
@@ -64,3 +66,38 @@ Run `grep --help` for the full list.
 - Alternation is leftmost-first (.NET) instead of POSIX leftmost-longest. This only changes
   which text `-o` and `--color` show, never which lines match.
 - Invalid UTF-8 doesn't make a file "binary". Only NUL bytes do.
+
+## findw
+
+GNU `find`, named `findw` because Windows already has an unrelated `find.exe` in System32.
+
+```powershell
+findw src -name '*.cs' -mtime -1
+findw . -name node_modules -prune -o -name '*.js' -print
+findw . -type f -size +10M -printf '%s\t%p\n'
+findw logs -name '*.log' -mtime +30 -delete
+findw . -name '*.tmp' -exec del {} ';'
+```
+
+It supports the expression language (`( ) ! -a -o ,`), `-name -iname -path -regex -type -size
+-empty -mtime -mmin -atime -amin -ctime -cmin -newer -newermt`, `-maxdepth -mindepth -depth
+-prune -quit`, and the actions `-print -print0 -printf -delete -exec ... ; -exec ... {} +
+-execdir`. Run `findw --help` for the full list.
+
+**Windows behaviour**
+
+- **Case:** `-name` and `-path` ignore case, as Windows file names do. `-iname` and `-ipath` are
+  accepted and behave the same.
+- **Paths:** paths print with `\`, and in `-path` patterns `/` and `\` are interchangeable.
+- **`-exec`:** `.exe` programs run directly. `.bat` and `.cmd` files, and cmd built-ins such as
+  `del`, `copy` and `echo`, run through `cmd /c`. In PowerShell, quote the terminator: `';'`.
+- **Links:** symlinks and junctions are treated as links (`-type l`) and are followed only with
+  `-L` or `-H`. Following links can't loop forever: loops are detected.
+- **`-hidden`:** a Windows extension that matches files with the Hidden attribute.
+
+**Differences from GNU find**
+
+- `-ctime`, `-cmin` and `%C` use the creation time, because Windows has no inode change time.
+- `-regex` defaults to POSIX extended syntax rather than Emacs syntax. Use `-regextype` with
+  `posix-basic` or `dotnet` to change it.
+- Not yet supported: `-user`, `-group`, `-perm`, `-links`, `-inum`, `-ls`, `-fprint`, `-ok`.
