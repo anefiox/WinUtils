@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>grep</AssemblyName>
+    <RootNamespace>WinUtils.Grep</RootNamespace>
+    <!-- Native AOT: ~10x faster startup than JIT, which matters for a CLI tool. -->
+    <PublishAot>true</PublishAot>
+    <OptimizationPreference>Speed</OptimizationPreference>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WinUtils.Common\WinUtils.Common.csproj" />
+    <InternalsVisibleTo Include="Grep.Tests" />
+  </ItemGroup>
+
+</Project>
