@@ -23,20 +23,28 @@ public static class PosixRegex
     public const string LineEnd = @"(?=\r?(?:\n|\z))";
 
     /// <param name="lineAnchors">Translate ^ and $ for searching a buffer of many lines instead of one line.</param>
-    public static string Translate(string pattern, bool extended, bool ignoreCase, out bool hasBackReferences, bool lineAnchors = false)
+    public static string Translate(string pattern, bool extended, bool ignoreCase, out bool hasBackReferences, bool lineAnchors = false) =>
+        lineAnchors
+            ? Translate(pattern, extended, ignoreCase, LineStart, LineEnd, LineStart, LineEnd, out hasBackReferences)
+            : Translate(pattern, extended, ignoreCase, "^", "$", @"\A", @"\z", out hasBackReferences);
+
+    /// <summary>Translates with caller-chosen .NET text for the anchors.</summary>
+    /// <param name="start">Replaces '^'.</param>
+    /// <param name="end">Replaces '$'.</param>
+    /// <param name="bufferStart">Replaces the GNU \` (start of buffer) anchor.</param>
+    /// <param name="bufferEnd">Replaces the GNU \' (end of buffer) anchor.</param>
+    public static string Translate(string pattern, bool extended, bool ignoreCase,
+        string start, string end, string bufferStart, string bufferEnd, out bool hasBackReferences)
     {
-        var translator = new Translator(pattern, extended, ignoreCase, lineAnchors);
+        var translator = new Translator(pattern, extended, ignoreCase, start, end, bufferStart, bufferEnd);
         string result = translator.Run();
         hasBackReferences = translator.HasBackReferences;
         return result;
     }
 
-    private sealed class Translator(string p, bool extended, bool ignoreCase, bool lineAnchors)
+    private sealed class Translator(string p, bool extended, bool ignoreCase, string _start, string _end, string bufferStart, string bufferEnd)
     {
         private const string UnmatchedBracket = "Unmatched [, [^, [:, [., or [=";
-
-        private readonly string _start = lineAnchors ? LineStart : "^";
-        private readonly string _end = lineAnchors ? LineEnd : "$";
 
         private readonly StringBuilder _sb = new();
         private readonly Stack<int> _groups = new();
@@ -147,8 +155,8 @@ public static class PosixRegex
                 case '>': Anchor(@"\b(?<=\w)"); break;
                 case 'b': Anchor(@"\b"); break;
                 case 'B': Anchor(@"\B"); break;
-                case '`': Anchor(lineAnchors ? _start : @"\A"); break;
-                case '\'': Anchor(lineAnchors ? _end : @"\z"); break;
+                case '`': Anchor(bufferStart); break;
+                case '\'': Anchor(bufferEnd); break;
                 // \w \W \s \S are GNU extensions; \d \D are our extension (GNU treats them as 'd'/'D').
                 case 'w' or 'W' or 's' or 'S' or 'd' or 'D':
                     Atom(_sb.Length, "\\" + c);

@@ -2,10 +2,12 @@
   <Folder Name="/src/">
     <Project Path="src/FindW/FindW.csproj" />
     <Project Path="src/Grep/Grep.csproj" />
+    <Project Path="src/Sed/Sed.csproj" />
     <Project Path="src/WinUtils.Common/WinUtils.Common.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/FindW.Tests/FindW.Tests.csproj" />
     <Project Path="tests/Grep.Tests/Grep.Tests.csproj" />
+    <Project Path="tests/Sed.Tests/Sed.Tests.csproj" />
   </Folder>
 </Solution>

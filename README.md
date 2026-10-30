@@ -9,6 +9,7 @@ that don't expand wildcards.
 |------|--------|
 | `grep` | ✅ 0.1 |
 | `findw` (find) | ✅ 0.1 |
+| `sed` | ✅ 0.1 |
 
 ## Build
 
@@ -32,6 +33,7 @@ src/WinUtils.Common   shared by every tool
   Text/                 Glob (fnmatch), PosixRegex (POSIX BRE/ERE to .NET regex)
 src/Grep              grep
 src/FindW             findw
+src/Sed               sed
 tests/<Tool>.Tests    xUnit tests for each tool
 ```
 
@@ -101,3 +103,38 @@ It supports the expression language (`( ) ! -a -o ,`), `-name -iname -path -rege
 - `-regex` defaults to POSIX extended syntax rather than Emacs syntax. Use `-regextype` with
   `posix-basic` or `dotnet` to change it.
 - Not yet supported: `-user`, `-group`, `-perm`, `-links`, `-inum`, `-ls`, `-fprint`, `-ok`.
+
+## sed
+
+GNU `sed`. Its output matches GNU sed 4.x byte for byte across a 276-case comparison, including
+exit codes and error messages.
+
+```powershell
+sed 's/foo/bar/g' file.txt
+sed -i.bak '/^#/d' config.ini
+sed -n '/BEGIN/,/END/p' log.txt
+sed -E 's/(\w+)@(\w+)/\2 at \1/' emails.txt
+sed ':a;N;$!ba;s/\n/,/g' list.txt
+```
+
+It supports every command (`s y p P d D n N g G h H x b t T : = l q Q a i c r R w W z F { }`),
+every address form (`N`, `$`, `/re/I`, `\%re%`, `first~step`, `addr,+N`, `addr,~N`, `0,/re/`),
+`s` flags `g p N i m w`, the case conversions `\U \L \u \l \E`, and the options `-n -e -f -E -i
+-s -z -u -l`. Run `sed --help` for the full list.
+
+**Windows behaviour**
+
+- **Line endings:** CRLF counts as the line terminator, so `s/$/!/` puts the `!` before the CR.
+  Output keeps each file's line endings. Use `-b` to treat `\r` as part of the line.
+- **In-place editing:** `-i` keeps the file's line endings, encoding (UTF-8, UTF-16, or any
+  single-byte encoding) and byte-order mark. It writes a temp file beside the original and swaps
+  it in.
+- **Encodings:** UTF-16 input sent to the console or a pipe is printed as UTF-8.
+- **Script files:** `-f` script files can have CRLF line endings.
+- **Wildcards:** `sed -i s/a/b/ *.txt` expands `*.txt` itself.
+
+**Differences from GNU sed**
+
+- The `e` command and the `s///e` flag (run the pattern space as a shell command) aren't
+  supported.
+- `--posix`, `--debug`, `--sandbox` and `--follow-symlinks` are accepted and ignored.
