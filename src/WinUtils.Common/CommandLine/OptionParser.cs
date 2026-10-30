@@ -29,8 +29,13 @@ public sealed class OptionParser
     private readonly Dictionary<char, OptionSpec> _short = [];
     private readonly List<OptionSpec> _long = [];
     private readonly bool _numeric;
+    private readonly bool _stopAtFirstOperand;
 
-    public OptionParser(IEnumerable<OptionSpec> specs, bool allowNumericOptions = false)
+    /// <param name="stopAtFirstOperand">
+    /// Treat everything from the first operand on as operands, for tools like xargs whose operands
+    /// are a command line with options of its own.
+    /// </param>
+    public OptionParser(IEnumerable<OptionSpec> specs, bool allowNumericOptions = false, bool stopAtFirstOperand = false)
     {
         foreach (var spec in specs)
         {
@@ -38,12 +43,13 @@ public sealed class OptionParser
             if (spec.Long is not null) _long.Add(spec);
         }
         _numeric = allowNumericOptions;
+        _stopAtFirstOperand = stopAtFirstOperand;
     }
 
     public ParseResult Parse(IReadOnlyList<string> args)
     {
         var result = new ParseResult();
-        bool permute = Environment.GetEnvironmentVariable("POSIXLY_CORRECT") is null;
+        bool permute = !_stopAtFirstOperand && Environment.GetEnvironmentVariable("POSIXLY_CORRECT") is null;
         bool onlyOperands = false;
         for (int i = 0; i < args.Count; i++)
         {

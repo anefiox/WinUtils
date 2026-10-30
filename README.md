@@ -13,6 +13,7 @@ that don't expand wildcards.
 | `head` | ✅ 0.1 |
 | `tail` | ✅ 0.1 |
 | `wc` | ✅ 0.1 |
+| `xargs` | ✅ 0.1 |
 
 ## Build
 
@@ -33,13 +34,15 @@ src/WinUtils.Common   shared by every tool
   CommandLine/          GNU getopt_long-style option parser
   IO/                   LineReader (encoding detection), OutputSink (Unicode console output),
                         Wildcards (expands *.txt, since cmd/PowerShell don't), FileIdentity,
-                        ByteLines/ByteTextWriter (byte-exact line handling), StdStreams
+                        ByteLines/ByteTextWriter (byte-exact line handling), StdStreams,
+                        CommandLauncher (runs .exe directly, .bat/.cmd and built-ins via cmd)
   Text/                 Glob (fnmatch), PosixRegex (POSIX BRE/ERE to .NET regex), Sizes (10K, 5MiB)
 src/Grep              grep
 src/FindW             findw
 src/Sed               sed
 src/Head, src/Tail    head, tail
 src/Wc                wc
+src/Xargs             xargs
 tests/<Tool>.Tests    xUnit tests for each tool
 ```
 
@@ -199,3 +202,39 @@ It supports `-l -w -c -m -L`, `--files0-from` and `--total=auto|always|only|neve
 - **Line endings:** a CRLF line ending counts as one line.
 - **Speed:** it's about 4× faster than GNU for word counts and the longest line, and 2× faster
   for line counts. `-c` alone reads only the file size.
+
+## xargs
+
+GNU `xargs`. Its output matches GNU's byte for byte across a 32-case comparison, apart from the
+backslash rule below.
+
+```powershell
+findw . -name '*.tmp' -print0 | xargs -0 del
+findw src -name '*.cs' -print0 | xargs -0 grep -l TODO
+dir /b *.log | xargs -n 1 -P 4 gzip
+type urls.txt | xargs -I {} curl -O {}
+```
+
+It supports `-0 -a -d -E -I -i -L -l -n -P -p -r -s -t -x`, `--process-slot-var` and
+`--show-limits`, with GNU's exit statuses (123, 124, 125, 126, 127).
+
+**Windows behaviour**
+
+- **Running commands:** `.exe` programs run directly with properly quoted arguments. `.bat` and
+  `.cmd` files, and cmd built-ins such as `del`, `copy` and `type`, run through `cmd /c`.
+  Batches are sized to fit the command-line limit: 32,767 characters, or 8,191 through cmd.exe.
+- **`echo`:** the default command, and `echo` itself, is a built-in POSIX-style echo, as on
+  Linux, rather than cmd.exe's echo, which prints quotes literally.
+- **Backslashes:** a backslash escapes only a blank or a quote (`a\ b`, `\"`). Anywhere else
+  it's literal, so Windows paths such as `C:\dir\file` and `\\server\share` pass through
+  intact. GNU xargs would strip every backslash.
+- **Line endings:** CRLF input from PowerShell or cmd doesn't leave a stray `\r` on the last
+  argument of each line.
+- **Missing commands:** a command that isn't on PATH and isn't a cmd built-in is reported as
+  not found (exit 127), without running cmd.exe.
+- **`-p`:** answers are read from the console, because standard input holds the items.
+
+**Differences from GNU**
+
+- `-o`/`--open-tty` isn't supported.
+- `--show-limits` reports Windows' limits.

@@ -7,6 +7,7 @@
     <Project Path="src/Tail/Tail.csproj" />
     <Project Path="src/Wc/Wc.csproj" />
     <Project Path="src/WinUtils.Common/WinUtils.Common.csproj" />
+    <Project Path="src/Xargs/Xargs.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/FindW.Tests/FindW.Tests.csproj" />
@@ -15,5 +16,6 @@
     <Project Path="tests/Sed.Tests/Sed.Tests.csproj" />
     <Project Path="tests/Tail.Tests/Tail.Tests.csproj" />
     <Project Path="tests/Wc.Tests/Wc.Tests.csproj" />
+    <Project Path="tests/Xargs.Tests/Xargs.Tests.csproj" />
   </Folder>
 </Solution>

@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>xargs</AssemblyName>
+    <RootNamespace>WinUtils.Xargs</RootNamespace>
+    <PublishAot>true</PublishAot>
+    <OptimizationPreference>Speed</OptimizationPreference>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WinUtils.Common\WinUtils.Common.csproj" />
+    <InternalsVisibleTo Include="Xargs.Tests" />
+  </ItemGroup>
+
+</Project>

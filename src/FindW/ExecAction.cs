@@ -1,14 +1,16 @@
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Text;
+using WinUtils.Common.IO;
 
 namespace WinUtils.FindW;
 
 /// <summary>-exec / -execdir, in both the one-file-per-command (";") and batched ("+") forms.</summary>
 internal sealed class ExecAction(FindCommand find, List<string> template, bool batch, bool inDirectory)
 {
-    // CreateProcess allows 32767 chars; leave room for the command and quoting.
-    private const int MaxBatchLength = 30_000;
+    // Batches must fit on one command line, which is much shorter when cmd.exe runs it.
+    private readonly int _maxBatchLength =
+        (CommandLauncher.UsesShell(template[0]) ? CommandLauncher.MaxShellCommandLine : CommandLauncher.MaxProcessCommandLine)
+        - CommandLauncher.CommandLineLength(template);
 
     private readonly List<string> _pending = [];
     private int _pendingLength;
@@ -27,10 +29,11 @@ internal sealed class ExecAction(FindCommand find, List<string> template, bool b
         if (!batch)
             return Run(template.Select(arg => arg.Replace("{}", target)).ToList(), directory) == 0;
 
-        if (_pending.Count > 0 && (_pendingLength + target.Length + 3 > MaxBatchLength || directory != _pendingDirectory))
+        int length = CommandLauncher.ArgumentLength(target);
+        if (_pending.Count > 0 && (_pendingLength + length > _maxBatchLength || directory != _pendingDirectory))
             Flush();
         _pending.Add(target);
-        _pendingLength += target.Length + 3;
+        _pendingLength += length;
         _pendingDirectory = directory;
         return true;
     }
@@ -47,8 +50,7 @@ internal sealed class ExecAction(FindCommand find, List<string> template, bool b
     private int Run(List<string> argv, string? directory)
     {
         find.Out.Flush(); // keep our output ahead of the child's
-        var psi = StartInfo(argv);
-        psi.UseShellExecute = false;
+        var psi = CommandLauncher.StartInfo(argv);
         if (directory is not null) psi.WorkingDirectory = directory;
         try
         {
@@ -63,43 +65,4 @@ internal sealed class ExecAction(FindCommand find, List<string> template, bool b
         }
     }
 
-    /// <summary>
-    /// Runs .exe and .com files directly. Batch files and cmd.exe built-ins (echo, del, copy, ...)
-    /// aren't programs CreateProcess can start, so they go through cmd /c.
-    /// </summary>
-    private static ProcessStartInfo StartInfo(List<string> argv)
-    {
-        string? path = FindExecutable(argv[0]);
-        if (path is not null && Path.GetExtension(path).ToLowerInvariant() is ".exe" or ".com")
-        {
-            var psi = new ProcessStartInfo(path);
-            foreach (string arg in argv.Skip(1)) psi.ArgumentList.Add(arg);
-            return psi;
-        }
-        var line = new StringBuilder(QuoteForCmd(path ?? argv[0]));
-        foreach (string arg in argv.Skip(1)) line.Append(' ').Append(QuoteForCmd(arg));
-        return new ProcessStartInfo(Environment.GetEnvironmentVariable("ComSpec") ?? "cmd.exe", $"/d /s /c \"{line}\"");
-    }
-
-    private static string QuoteForCmd(string arg) =>
-        arg.Length == 0 || arg.AsSpan().IndexOfAny(' ', '\t') >= 0 ? $"\"{arg}\"" : arg;
-
-    private static string? FindExecutable(string command)
-    {
-        string[] extensions = Path.HasExtension(command)
-            ? [""]
-            : (Environment.GetEnvironmentVariable("PATHEXT") ?? ".COM;.EXE;.BAT;.CMD").Split(';', StringSplitOptions.RemoveEmptyEntries);
-        IEnumerable<string> directories = command.AsSpan().IndexOfAny('\\', '/') >= 0
-            ? [""]
-            : [Environment.CurrentDirectory, .. (Environment.GetEnvironmentVariable("PATH") ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries)];
-        foreach (string dir in directories)
-        {
-            foreach (string ext in extensions)
-            {
-                string candidate = Path.Join(dir, command + ext);
-                if (File.Exists(candidate)) return candidate;
-            }
-        }
-        return null;
-    }
 }
