@@ -1,6 +1,7 @@
 # Publishes each tool as its own Native AOT exe and zip, so tools can be downloaded separately:
-#   publish\<tool>\<tool>.exe            the standalone exe
-#   publish\<tool>-<version>-<rid>.zip   the release download
+#   publish\<tool>\<tool>.exe                the standalone exe
+#   publish\<tool>-<version>-<rid>.zip       the release download for one tool
+#   publish\WinUtils-<version>-<rid>.zip     every tool (only when building them all)
 # Usage: .\build.ps1 [-Tool grep] [-Runtime win-x64]
 param([string]$Tool, [string]$Runtime = 'win-x64')
 $ErrorActionPreference = 'Stop'
@@ -10,6 +11,7 @@ $installer = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Install
 if (Test-Path $installer) { $env:PATH = "$installer;$env:PATH" }
 
 $version = "$(([xml](Get-Content "$PSScriptRoot\Directory.Build.props")).Project.PropertyGroup.Version)".Trim()
+$exes = @()
 
 Get-ChildItem "$PSScriptRoot\src\*\*.csproj" | ForEach-Object {
     $props = ([xml](Get-Content $_)).Project.PropertyGroup
@@ -21,4 +23,9 @@ Get-ChildItem "$PSScriptRoot\src\*\*.csproj" | ForEach-Object {
     dotnet publish $_.FullName -c Release -r $Runtime -o $out -p:DebugType=none -p:NativeDebugSymbols=false
     if ($LASTEXITCODE) { exit $LASTEXITCODE }
     Compress-Archive -Path "$out\$name.exe" -DestinationPath "$PSScriptRoot\publish\$name-$version-$Runtime.zip" -Force
+    $exes += "$out\$name.exe"
+}
+
+if (-not $Tool) {
+    Compress-Archive -Path $exes -DestinationPath "$PSScriptRoot\publish\WinUtils-$version-$Runtime.zip" -Force
 }
