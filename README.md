@@ -12,6 +12,7 @@ that don't expand wildcards.
 | `sed` | ✅ 0.1 |
 | `head` | ✅ 0.1 |
 | `tail` | ✅ 0.1 |
+| `wc` | ✅ 0.1 |
 
 ## Build
 
@@ -38,6 +39,7 @@ src/Grep              grep
 src/FindW             findw
 src/Sed               sed
 src/Head, src/Tail    head, tail
+src/Wc                wc
 tests/<Tool>.Tests    xUnit tests for each tool
 ```
 
@@ -174,3 +176,26 @@ tail -f build.log --pid 1234 # stop following when process 1234 exits
 - `tail` checks for new data every 0.25 s by default, rather than GNU's 1 s.
 - The obsolete `tail +N` form, a positional argument starting with `+`, isn't supported. Use
   `tail -n +N`.
+
+## wc
+
+GNU `wc`. Its output matches GNU's byte for byte across a 168-case comparison, including the
+column widths.
+
+```powershell
+wc file.txt                          # lines, words, bytes
+wc -l *.cs                           # line counts with a total
+findw src -name '*.cs' -print0 | wc -l --files0-from=-
+wc -L log.txt                        # longest line, in display columns
+```
+
+It supports `-l -w -c -m -L`, `--files0-from` and `--total=auto|always|only|never`.
+
+**Windows behaviour**
+
+- **Encodings:** UTF-8, UTF-16 (with a byte-order mark) and single-byte encodings are detected.
+  `-m`, `-w` and `-L` count characters, not bytes, so `café` is 4 characters, `日本語` is 6
+  columns wide, and an emoji is one character two columns wide. `-c` always counts raw bytes.
+- **Line endings:** a CRLF line ending counts as one line.
+- **Speed:** it's about 4× faster than GNU for word counts and the longest line, and 2× faster
+  for line counts. `-c` alone reads only the file size.

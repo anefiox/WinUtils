@@ -5,6 +5,7 @@
     <Project Path="src/Head/Head.csproj" />
     <Project Path="src/Sed/Sed.csproj" />
     <Project Path="src/Tail/Tail.csproj" />
+    <Project Path="src/Wc/Wc.csproj" />
     <Project Path="src/WinUtils.Common/WinUtils.Common.csproj" />
   </Folder>
   <Folder Name="/tests/">
@@ -13,5 +14,6 @@
     <Project Path="tests/Head.Tests/Head.Tests.csproj" />
     <Project Path="tests/Sed.Tests/Sed.Tests.csproj" />
     <Project Path="tests/Tail.Tests/Tail.Tests.csproj" />
+    <Project Path="tests/Wc.Tests/Wc.Tests.csproj" />
   </Folder>
 </Solution>
